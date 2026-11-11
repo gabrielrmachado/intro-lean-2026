@@ -1,1 +1,85 @@
 /.lake
+
+## LaTeX artifacts
+
+# ==============================================================================
+# VS Code e Arquivos de Sistema
+# ==============================================================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+.DS_Store
+
+# ==============================================================================
+# Núcleo de Compilação do LaTeX
+# ==============================================================================
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.xdv
+*-converted-to.*
+
+# ==============================================================================
+# Automação (latexmk) e SyncTeX (LaTeX Workshop)
+# ==============================================================================
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+
+# ==============================================================================
+# Bibliografia (BibTeX / Biber)
+# ==============================================================================
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+# ==============================================================================
+# Classes Específicas: Apresentações Beamer
+# ==============================================================================
+*.nav
+*.snm
+*.vrb
+
+# ==============================================================================
+# Pacotes Avançados: Código (Minted), Gráficos (TikZ), Glossários
+# ==============================================================================
+_minted-*/
+*.dpth
+*.md5
+*.auxlock
+*.tikz
+*.figlist
+*.makefile
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+
+# ==============================================================================
+# Artefatos Binários (PDFs)
+# ==============================================================================
+# Descomente a linha abaixo para impedir o versionamento de qualquer PDF.
+# Recomendado: O Git lida mal com binários que mudam frequentemente. 
+# O PDF deve ser gerado localmente ou por uma pipeline de CI, não rastreado no Git.
+# *.pdf

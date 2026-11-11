@@ -1,0 +1,340 @@
+\documentclass[10pt, aspectratio=43]{beamer}
+
+% --- Pacotes Básicos ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage[alf]{abntex2cite}
+\setbeamertemplate{caption}[numbered]
+
+% --- Configuração Visual IDÊNTICA ao PDF 09-logic-in-lean ---
+\usetheme{Singapore} % Tema nativo que gera o degradê e os miniframes exatamente como no PDF
+\setbeamertemplate{navigation symbols}{} % Remove ícones de navegação inferiores
+
+% Cores originais do Beamer/PDF
+\definecolor{pucblue}{RGB}{51, 51, 179} % Azul clássico do Beamer (structure) usado no PDF
+\definecolor{commentgreen}{RGB}{0, 110, 0}
+\definecolor{keywordblue}{RGB}{0, 0, 180}
+
+\setbeamercolor{structure}{fg=pucblue}
+\setbeamercolor{title}{fg=pucblue}
+\setbeamercolor{frametitle}{fg=pucblue}
+\setbeamercolor{section in head/foot}{fg=pucblue}
+
+% Ajusta a cor do degradê do tema Singapore para o tom suave do PDF
+\colorlet{beamer@blendedblue}{pucblue}
+
+% --- Bolinhas vazadas no cabeçalho e marcadores redondos ---
+\setbeamertemplate{mini frames}[circle]
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{sections/subsections in toc}[sections numbered]
+
+% Título dos slides alinhado à esquerda (o tema Singapore centraliza por padrão)
+\setbeamertemplate{frametitle}[default][left]
+
+% Rodapé limpo apenas com numeração X/Y em negrito na direita (oculto quando sem número)
+\setbeamertemplate{footline}{%
+  \hfill \textbf{\insertframenumber/\inserttotalframenumber} \hspace{0.3cm} \vspace{0.2cm}
+}
+
+% Slide de Sumário automático no início de cada seção (sem contar nem exibir número de página, igual ao PDF)
+\AtBeginSection[]{
+  {
+    \setbeamertemplate{footline}{}
+    \begin{frame}[noframenumbering]{Sumário}
+      \tableofcontents[currentsection]
+    \end{frame}
+  }
+}
+
+% --- Configuração de Caixas de Código para Lean 4 (Fundo branco e borda fina, igual ao PDF) ---
+\lstdefinelanguage{Lean4}{
+  keywords={def, theorem, lemma, example, structure, inductive, where, by, intro, apply, exact, rw, cases, with, assumption, rfl, sorry, exfalso, contradiction, forall, exists, Prop, Type, Nat, Bool, List, False, True, And, Or, Not, Injective},
+  keywordstyle=\color{keywordblue}\bfseries,
+  comment=[l]{--},
+  commentstyle=\color{commentgreen}\ttfamily,
+  basicstyle=\ttfamily\footnotesize\color{pucblue!90!black},
+  backgroundcolor=\color{white},
+  frame=single,
+  rulecolor=\color{black},
+  framesep=4pt,
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  showstringspaces=false,
+  breaklines=true,
+  literate=
+    {→}{{$\rightarrow$}}1
+    {←}{{$\leftarrow$}}1
+    {↔}{{$\leftrightarrow$}}1
+    {∀}{{$\forall$}}1
+    {∃}{{$\exists$}}1
+    {∧}{{$\wedge$}}1
+    {∨}{{$\vee$}}1
+    {¬}{{$\neg$}}1
+    {≠}{{$\neq$}}1
+    {≤}{{$\le$}}1
+    {≥}{{$\ge$}}1
+    {α}{{$\alpha$}}1
+    {β}{{$\beta$}}1
+    {ç}{{\c{c}}}1
+    {ã}{{\~a}}1
+}
+
+% --- Metadados da Apresentação (Formatação nativa idêntica à capa do PDF) ---
+\title{Formalização de Limites Inferiores via Complexidade de Kolmogorov em Lean 4}
+\subtitle{O Método da Incompressibilidade e suas Aplicações Computacionais}
+\author{Gabriel Resende Machado\texorpdfstring{\\[0.2ex]}{, }{\footnotesize INF2290: Tópicos em Teoria da Computação IV -- Formalização em Lean}}
+\institute{\small Departamento de Informática, PUC-Rio}
+\date{\tikz[remember picture,overlay] \node[anchor=south, yshift=0.5cm] at (current page.south) {05 de Novembro de 2026};}
+
+\begin{document}
+
+% --- SLIDE DE TÍTULO ---
+% Exibe o cabeçalho com degradê, mas omite o número de página no rodapé (como na pág. 1 do PDF)
+{
+  \setbeamertemplate{footline}{}
+  \begin{frame}
+    \titlepage
+  \end{frame}
+}
+
+% --- SUMÁRIO GERAL INICIAL (Igual à pág. 2 do PDF) ---
+{
+  \setbeamertemplate{footline}{}
+  \begin{frame}[noframenumbering]{Sumário}
+    \tableofcontents
+  \end{frame}
+}
+
+% =========================================================================
+\section{Introdução}
+% =========================================================================
+
+\begin{frame}{O Desafio dos Limites Inferiores}
+  Na Teoria da Computação, há uma assimetria fundamental entre dois tipos de problemas:
+  \vspace{0.3cm}
+  \begin{itemize}
+    \item \textbf{Limites Superiores:} para estabelecer um limite superior, basta demonstrar um algoritmo, um circuito ou uma codificação que resolva o problema em espaço ou tempo $T \in O(f(n))$;
+
+    \vspace{2mm}
+    \begin{itemize}
+        \item O algoritmo \textit{MergeSort} ordena \textit{n} itens com $O(n \log n)$ comparações (afirmação existencial $\exists$).
+    \end{itemize}
+    
+    \vspace{0.2cm}
+    \item \textbf{A Dificuldade Assintótica dos Limites Inferiores:} estabelecer um limite inferior $T \in \Omega(f(n))$ exige uma prova universal negativa, \textit{i.e.} demonstrar que \textbf{nenhum} algoritmo possível, sob um determinado modelo computacional, pode ser mais rápido ou compacto que um dado limiar.
+
+    \vspace{2mm}
+    \begin{itemize}
+        \item Exibir um caminho de 10 km prova que a distância é no máximo 10 km; provar que ela é no mínimo 10 km exige descartar todos os caminhos possíveis (afirmação universal $\forall$).
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{O Desafio dos Limites Inferiores}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.95\textwidth]{figures/bounds_example.png}
+        \caption{\scriptsize{A assimetria na Teoria da Complexidade. À esquerda, um limite superior prova-se encontrando um único caminho válido. À direita, um limite inferior exige demonstrar que nenhum caminho no universo de possibilidades consegue quebrar a barreira estabelecida.}}
+        \label{fig:bounds_example}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Regularidade vs. Aleatoriedade}
+    \vspace{1mm}
+    \begin{itemize}
+        \item \small{Um objeto é aleatório se não for possível gerar sua sequência por meio de um programa menor do que ela mesma;}
+        \vspace{1mm}
+        \item \textbf{\small{Objetos aleatórios são comumente chamados de imcompressíveis via Complexidade de Kolmogorov.}}
+    \end{itemize}
+    \vspace{1mm}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.98\textwidth]{figures/kolmogorov_examples.png}
+        \caption{\footnotesize{Regularidade vs. Aleatoriedade na Complexidade de Kolmogorov: a incompressibilidade algorítmica como a verdadeira medida do que é aleatório.}}
+        \label{fig:kolmogorov_examples}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{A Complexidade de Kolmogorov}
+\vspace{2mm}
+
+A Complexidade de Kolmogorov $K(x)$ é o tamanho (em bits) do menor programa que gera $x$, tal que $|x| = n$.
+
+ \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=Definição Formal]
+    \footnotesize{Na Figura \ref{fig:kolmogorov_examples}, nos casos $a)$ e $b)$, as strings de $n$ bits obedeciam a algum padrão ou comportamento reproduzível por meio de um algoritmo de custo adicional $c$ produzir uma saída menor do que $n$. Daí, tem-se:}
+    \begin{equation}
+        K(x) < n + c
+    \end{equation}
+    \footnotesize{Contudo, no caso $c)$, não há como reproduzir a saída de $n$ lançamentos de moeda pela sua intrínseca natureza não determinística, a não ser por um algoritmo específico que exiba a própria saída $n$ de lançamentos. Portanto:}
+    \begin{equation}
+        K(x) \ge n - c
+    \end{equation}
+    \footnotesize{Como aqui o objetivo é caracterizar sequências que não podem ser significativamente comprimidas, $c$ representa a quantidade máxima de bits que admite-se perder em relação ao comprimento original da sequência.}
+ \end{tcolorbox}    
+\end{frame}
+
+\begin{frame}{O Princípio da Casa dos Pombos}
+\vspace{1mm}
+Objetos imcompressíveis -- ou Kolmogorov-Aleatórios -- violam o Princípio da Casa dos Pombos.
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.95\textwidth]{figures/casa_pombos_definition.jpeg}
+        \caption{\footnotesize{A violação do Princípio da Casa dos Pombos em relação à Complexidade de Kolmogorov.}}
+        \label{fig:casa_pombos_definition}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{A Violação do Princípio em Strings $2^n$, sendo $n=4$}
+\vspace{1mm}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.93\textwidth]{figures/casa_pombos_example.jpeg}
+    \caption{\footnotesize{A violação do Princípio da Casa dos Pombos em relação à Complexidade de Kolmogorov para uma string de $n = 4$.}}
+    \label{fig:casa_pombos_example}
+\end{figure}
+\end{frame}
+
+\section{Problema de Pesquisa}
+
+\begin{frame}{Problema de Pesquisa}
+
+    \begin{itemize}
+        \item A Complexidade de Kolmogorov oferece uma abordagem para relacionar a impossibilidade de comprimir determinadas informações ao custo necessário para representá-las, processá-las ou reconstruí-las;
+        \vspace{0.1cm}
+        \item Todavia, essa abordagem exige a formalização de diversos elementos matemáticos e computacionais, entre eles:
+        \vspace{0.1cm}
+        \begin{enumerate}
+            \item Representação binária de objetos matemáticos e computacionais;
+            \vspace{0.15cm}
+            \item Construção de codificações capazes de representar informações de maneira inequívoca;
+            \vspace{0.15cm}
+            \item Propriedades de codificações autodelimitadas (\textit{self-terminating codes});
+            \vspace{0.15cm}
+            \item Relações entre comprimento de descrições e complexidade de Kolmogorov;
+            \vspace{0.15cm}
+            \item Reconstrução algorítmica de objetos a partir de representações compactas;
+            \vspace{0.15cm}
+            \item Derivação de limites inferiores a partir de argumentos de contradição. 
+        \end{enumerate}
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Problema de Pesquisa}
+    \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/problem_domains.png}
+    \caption{\footnotesize{Contextos de aplicação do cálculo dos limites via Complexidade de Kolmogorov.}}
+    \label{fig:problem_domains}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Problema de Pesquisa}
+
+    \begin{tcolorbox}[colback=pucblue!5!white, colframe=red!75!black, title=Problema Central de Pesquisa]
+    Como formalizar, em um assistente de demonstrações, o princípio da incompressibilidade de Kolmogorov e utilizá-lo para estabelecer limites inferiores em diferentes contextos matemáticos e computacionais?
+    \end{tcolorbox}
+\end{frame}
+
+\section{Objetivos Geral e Específicos}
+
+\begin{frame}{Objetivo Geral}
+    \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=O Princípio da Imcompressibilidade para Limites Inferiores]
+        {Demonstrar formalmente que determinados problemas matemáticos e computacionais possuem limites inferiores de complexidade, utilizando a impossibilidade de representar objetos de alta complexidade de Kolmogorov por descrições significativamente menores.}
+    \end{tcolorbox}
+\end{frame}
+
+% --- SLIDE 1 (Itens 1 e 2) ---
+\begin{frame}{Objetivos Específicos I}
+\begin{enumerate}
+    \item Fundamentação Matemática e Computacional:
+    \begin{itemize}
+        \item Formalizar os conceitos fundamentais de sequências binárias, comprimento de descrições e complexidade algorítmica; 
+        \item Estabelecer propriedades matemáticas relacionadas à incompressibilidade;
+        \item Caracterizar formalmente os mecanismos de codificação e decodificação de informações.
+    \end{itemize}
+    
+    \medskip
+    
+    \item Desenvolvimento de uma Estrutura de Formalização:
+    \begin{itemize}
+        \item Construir funções de codificação e reconstrução de objetos matemáticos;
+        \item Formalizar propriedades de codificações autodelimitadas e seus respectivos comprimentos;
+        \item Estabelecer relações entre representações computacionais e limites inferiores de complexidade.
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+% --- SLIDE 2 (Itens 3 e 4) ---
+\begin{frame}{Objetivos Específicos II}
+\begin{enumerate}
+    \setcounter{enumi}{2} % Faz o próximo \item começar no número 3
+    \item Aplicação do Princípio da Incompressibilidade:
+    \begin{itemize}
+        \item Investigar resultados relacionados à distribuição de números primos;
+        \item Estabelecer limites inferiores para a representação de funções booleanas por circuitos e fórmulas;
+        \item Formalizar relações entre sequências de cruzamento e limites inferiores de tempo de execução de máquinas de Turing.
+    \end{itemize}
+    
+    \medskip
+    
+    \item Verificação Mecânica:
+    \begin{itemize}
+        \item Desenvolver as demonstrações utilizando os recursos de Lean 4;
+        \item Reutilizar estruturas indutivas, definições funcionais e resultados matemáticos disponíveis na Mathlib quando apropriado;
+        \item Garantir que os resultados formalizados sejam aceitos pelo verificador de tipos do Lean.
+    \end{itemize}
+\end{enumerate}
+\end{frame}
+
+\section{Resultados e Entregáveis}
+
+\begin{frame}{Resultados Esperados}
+    \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/expected_results.png}
+    \caption{\footnotesize{Princípio para estabelecer resultados em três diferentes domínios.}}
+    \label{fig:expected_results}
+    \end{figure}
+\end{frame}
+    
+\begin{frame}{Entregáveis}
+    Dentro do escopo de atividades propostas em \cite{schoning1998kolmogorov}, estão previstos os seguintes entregáveis:
+    
+    \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=Entregáveis do Projeto]
+    \begin{itemize}
+        \item Definições, lemas e teoremas das soluções dos exercícios implementados em Lean 4;
+        \item Teoremas formalmente verificados;
+        \item Código organizado, documentado e reproduzível a partir da clonagem ou download de um respectivo repositório no GitHub;
+        \item Relatório em PDF com o detalhamento passo a passo das soluções dos problemas supracitados.
+    \end{itemize}
+    \end{tcolorbox}
+\end{frame}
+
+\section{Cronograma}
+
+\begin{frame}{Cronograma}
+    \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{figures/schedule.png}
+    \caption{\footnotesize{Cronograma de execução do projeto.}}
+    \label{fig:schedule}
+    \end{figure}
+\end{frame}
+
+% =========================================================================
+\section{Referências}
+% =========================================================================
+\begin{frame}{Referências}
+    \bibliography{refs}    
+\end{frame}
+
+\end{document}
