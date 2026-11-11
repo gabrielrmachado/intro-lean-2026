@@ -9,6 +9,7 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{tcolorbox}
+\usepackage{booktabs} % \toprule, \midrule, \bottomrule usados na tabela de resultados
 \usepackage[alf]{abntex2cite}
 \setbeamertemplate{caption}[numbered]
 
@@ -28,6 +29,11 @@
 
 % Ajusta a cor do degradê do tema Singapore para o tom suave do PDF
 \colorlet{beamer@blendedblue}{pucblue}
+
+% Estilo reutilizável para as caixas (tcolorbox); evita repetir as cores em cada slide
+\tcbset{
+  pucbox/.style={colback=pucblue!5!white, colframe=blue!75!black}
+}
 
 % --- Bolinhas vazadas no cabeçalho e marcadores redondos ---
 \setbeamertemplate{mini frames}[circle]
@@ -87,11 +93,11 @@
 }
 
 % --- Metadados da Apresentação (Formatação nativa idêntica à capa do PDF) ---
-\title{Formalização de Limites Inferiores via Complexidade de Kolmogorov em Lean 4}
-\subtitle{O Método da Incompressibilidade e suas Aplicações Computacionais}
+\title[Incompressibilidade e Primos em Lean 4]{Formalização de Limites Inferiores na Distribuição de Primos via Complexidade de Kolmogorov}
+\subtitle{\small{Códigos Autodelimitados e o Método da Incompressibilidade em Lean 4}}
 \author{Gabriel Resende Machado\texorpdfstring{\\[0.2ex]}{, }{\footnotesize INF2290: Tópicos em Teoria da Computação IV -- Formalização em Lean}}
 \institute{\small Departamento de Informática, PUC-Rio}
-\date{\tikz[remember picture,overlay] \node[anchor=south, yshift=0.5cm] at (current page.south) {05 de Novembro de 2026};}
+\date{\tikz[remember picture,overlay] \node[anchor=south, yshift=0.5cm] at (current page.south) {12 de Novembro de 2026};}
 
 \begin{document}
 
@@ -167,7 +173,7 @@
 
 A Complexidade de Kolmogorov $K(x)$ é o tamanho (em bits) do menor programa que gera $x$, tal que $|x| = n$.
 
- \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=Definição Formal]
+ \begin{tcolorbox}[pucbox, title=Definição Formal]
     \footnotesize{Na Figura \ref{fig:kolmogorov_examples}, nos casos $a)$ e $b)$, as strings de $n$ bits obedeciam a algum padrão ou comportamento reproduzível por meio de um algoritmo de custo adicional $c$ produzir uma saída menor do que $n$. Daí, tem-se:}
     \begin{equation}
         K(x) < n + c
@@ -204,137 +210,154 @@ Objetos imcompressíveis -- ou Kolmogorov-Aleatórios -- violam o Princípio da 
 
 \section{Problema de Pesquisa}
 
-\begin{frame}{Problema de Pesquisa}
-
-    \begin{itemize}
-        \item A Complexidade de Kolmogorov oferece uma abordagem para relacionar a impossibilidade de comprimir determinadas informações ao custo necessário para representá-las, processá-las ou reconstruí-las;
-        \vspace{0.1cm}
-        \item Todavia, essa abordagem exige a formalização de diversos elementos matemáticos e computacionais, entre eles:
-        \vspace{0.1cm}
-        \begin{enumerate}
-            \item Representação binária de objetos matemáticos e computacionais;
-            \vspace{0.15cm}
-            \item Construção de codificações capazes de representar informações de maneira inequívoca;
-            \vspace{0.15cm}
-            \item Propriedades de codificações autodelimitadas (\textit{self-terminating codes});
-            \vspace{0.15cm}
-            \item Relações entre comprimento de descrições e complexidade de Kolmogorov;
-            \vspace{0.15cm}
-            \item Reconstrução algorítmica de objetos a partir de representações compactas;
-            \vspace{0.15cm}
-            \item Derivação de limites inferiores a partir de argumentos de contradição. 
-        \end{enumerate}
-    \end{itemize}
-    
+\begin{frame}{Problema de Pesquisa: O Hiato nas Bibliotecas de Lean 4}
+\begin{itemize}
+    \item O ecossistema atual do Lean 4 divide-se entre a \textbf{Mathlib} (rica em Teoria dos Números) e a \textbf{Complexitylib} (que formaliza a complexidade descritiva $C_M(x)$ e a existência de strings binárias incompressíveis);
+    \item Contudo, a \textbf{Complexitylib} opera puramente sobre strings isoladas (\texttt{List Bool}), carecendo da infraestrutura necessária para demonstrar limites inferiores em estruturas aritméticas:
+    \begin{enumerate}
+        \item \textbf{Ausência de Códigos Autodelimitados:} Na complexidade simples, concatenar descrições exige esquemas livres de prefixo (\textit{self-terminating codes}) para demarcar fronteiras de decodificação sem perda assintótica;
+        \item \textbf{Ponte Informacional-Aritmética:} Acoplar a reconstrução algorítmica à fatoração única e à enumeração de primos da \texttt{Mathlib};
+        \item \textbf{Transferência Assintótica:} Formalizar como a redução no comprimento de códigos binários impõe limites inferiores sobre a função de contagem de primos $\pi(n)$.
+    \end{enumerate}
+\end{itemize}
 \end{frame}
 
 \begin{frame}{Problema de Pesquisa}
     \begin{figure}
     \centering
-    \includegraphics[width=\textwidth]{figures/problem_domains.png}
-    \caption{\footnotesize{Contextos de aplicação do cálculo dos limites via Complexidade de Kolmogorov.}}
-    \label{fig:problem_domains}
+    \includegraphics[width=\textwidth]{figures/problem_domain.png}
+    \caption{\footnotesize{Arquitetura da formalização: o diagrama ilustra o fluxo metodológico do projeto, detalhando como o princípio abstrato da incompressibilidade de Kolmogorov (1) é estendido por uma teoria de códigos autodelimitados (2) para estabelecer limites inferiores quantitativos na distribuição de números primos (3), evidenciando a extensão proposta sobre a base da \texttt{Complexitylib}.}}
+    \label{fig:problem_domain}
     \end{figure}
 \end{frame}
 
 \begin{frame}{Problema de Pesquisa}
 
-    \begin{tcolorbox}[colback=pucblue!5!white, colframe=red!75!black, title=Problema Central de Pesquisa]
-    Como formalizar, em um assistente de demonstrações, o princípio da incompressibilidade de Kolmogorov e utilizá-lo para estabelecer limites inferiores em diferentes contextos matemáticos e computacionais?
+    \begin{tcolorbox}[pucbox, colframe=red!75!black, title=Problema Central de Pesquisa]
+    Como estender a infraestrutura de Complexidade de Kolmogorov da \texttt{\textbf{Complexitylib}} em Lean 4 com esquemas formais de \textbf{codificação autodelimitada} para estabelecer, por pura incompressibilidade algorítmica, a infinitude dos números primos e limites inferiores assintóticos para a sua distribuição $\pi(n)$?
     \end{tcolorbox}
 \end{frame}
 
 \section{Objetivos Geral e Específicos}
 
 \begin{frame}{Objetivo Geral}
-    \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=O Princípio da Imcompressibilidade para Limites Inferiores]
-        {Demonstrar formalmente que determinados problemas matemáticos e computacionais possuem limites inferiores de complexidade, utilizando a impossibilidade de representar objetos de alta complexidade de Kolmogorov por descrições significativamente menores.}
+    \begin{tcolorbox}[pucbox, title=Incompressibilidade Aplicada à Distribuição de Primos]
+        {Desenvolver uma formalização mecanicamente verificada em Lean 4 que integre a \textbf{Complexitylib} e a \textbf{Mathlib} por meio de códigos autodelimitados, demonstrando como melhorias na eficiência descritiva de pares de números naturais se traduzem diretamente em limites inferiores progressivamente mais fortes para a função de contagem de primos $\pi(n)$.}
     \end{tcolorbox}
 \end{frame}
 
 % --- SLIDE 1 (Itens 1 e 2) ---
 \begin{frame}{Objetivos Específicos I}
 \begin{enumerate}
-    \item Fundamentação Matemática e Computacional:
+    \item \textbf{Ponte Aritmética e Integração com a Complexitylib:}
     \begin{itemize}
-        \item Formalizar os conceitos fundamentais de sequências binárias, comprimento de descrições e complexidade algorítmica; 
-        \item Estabelecer propriedades matemáticas relacionadas à incompressibilidade;
-        \item Caracterizar formalmente os mecanismos de codificação e decodificação de informações.
+        \item Conectar o módulo de incompressibilidade de strings (\texttt{Cslib.Kolmogorov}) à representação binária canônica de números naturais;
+        \item Formalizar o princípio de reconstrução injetora como limite superior para a complexidade de Kolmogorov de inteiros;
+        \item Demonstrar a infinitude dos números primos via incompressibilidade da codificação da tupla de expoentes de fatoração.
     \end{itemize}
-    
     \medskip
-    
-    \item Desenvolvimento de uma Estrutura de Formalização:
+    \item \textbf{Formalização de Códigos Autodelimitados (\textit{Self-Terminating Codes}):}
     \begin{itemize}
-        \item Construir funções de codificação e reconstrução de objetos matemáticos;
-        \item Formalizar propriedades de codificações autodelimitadas e seus respectivos comprimentos;
-        \item Estabelecer relações entre representações computacionais e limites inferiores de complexidade.
+        \item Construir funções de codificação livre de prefixo por intercalação de bits ($\overline{w}$) e por prefixação logarítmica de comprimento ($\text{code}(w) = \overline{\text{bin}(|w|)}w$);
+        \item Demonstrar formalmente a decodificação única em cadeias concatenadas e caracterizar suas cotas exatas de comprimento;
+        \item Generalizar o esquema para codificações autodelimitadas iteradas.
     \end{itemize}
 \end{enumerate}
 \end{frame}
 
-% --- SLIDE 2 (Itens 3 e 4) ---
 \begin{frame}{Objetivos Específicos II}
 \begin{enumerate}
-    \setcounter{enumi}{2} % Faz o próximo \item começar no número 3
-    \item Aplicação do Princípio da Incompressibilidade:
+    \setcounter{enumi}{2}
+    \item \textbf{Derivação de Limites Inferiores para $\pi(n)$ (Teorema Fraco dos Primos):}
     \begin{itemize}
-        \item Investigar resultados relacionados à distribuição de números primos;
-        \item Estabelecer limites inferiores para a representação de funções booleanas por circuitos e fórmulas;
-        \item Formalizar relações entre sequências de cruzamento e limites inferiores de tempo de execução de máquinas de Turing.
+        \item Formalizar a reconstrução algorítmica de um inteiro $n$ a partir do índice do seu maior fator primo $m$ e do quociente $n/p_m$;
+        \item Estabelecer a redução analítica que converte cotas superiores do $m$-ésimo primo ($p_m$) em limites inferiores para $\pi(n)$;
+        \item Demonstrar a cota assintótica $\pi(n) \ge \frac{n}{\log^2 n}$ e sua otimização via códigos iterados.
     \end{itemize}
-    
     \medskip
-    
-    \item Verificação Mecânica:
+    \item \textbf{Verificação Mecânica e Contribuição de Biblioteca:}
     \begin{itemize}
-        \item Desenvolver as demonstrações utilizando os recursos de Lean 4;
-        \item Reutilizar estruturas indutivas, definições funcionais e resultados matemáticos disponíveis na Mathlib quando apropriado;
-        \item Garantir que os resultados formalizados sejam aceitos pelo verificador de tipos do Lean.
+        \item Garantir que todas as definições, lemas de comprimento e teoremas de limites inferiores sejam aceitos pelo verificador de tipos do Lean 4 (livres de \texttt{sorry}), estruturando um módulo extensível sobre a \texttt{Complexitylib}.
     \end{itemize}
 \end{enumerate}
 \end{frame}
 
 \section{Resultados e Entregáveis}
 
-\begin{frame}{Resultados Esperados}
-    \begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{figures/expected_results.png}
-    \caption{\footnotesize{Princípio para estabelecer resultados em três diferentes domínios.}}
-    \label{fig:expected_results}
-    \end{figure}
+\begin{frame}{Resultados Esperados: Hierarquia de Formalização}
+\begin{table}
+\centering
+\small % Tamanho padrão um pouco menor
+\renewcommand{\arraystretch}{1.4} % Boa altura para as frações matematicas
+
+% O resizebox garante que a tabela JAMAIS passará dos limites do slide
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lp{3.6cm}p{4.4cm}}
+\toprule
+\textbf{Abordagem} & \textbf{Codificação / Custo} & \textbf{Limite de} $\pi(n)$ \textbf{Verificado} \\ 
+\midrule
+
+\textbf{1. Qualitativo} & Expoentes da fatoração \newline $n = p_1^{e_1} \cdots p_k^{e_k}$ & Infinitude de primos \newline ($\pi(n) \to \infty$) \\ \hline
+
+\textbf{2. Elementar} & Intercalação de bits $\overline{w}$ \newline Custo: $2|w|$ & Cota polinomial \newline $\pi(n) \ge \sqrt{n}$ \\ \hline
+
+\textbf{3. Compacto} & Prefixo de tamanho \newline $\text{code}(w) = \overline{\text{bin}(|w|)}w$ \newline Custo: $|w| + 2\log|w|$ & \textbf{Teorema Fraco dos Primos:} \newline $\pi(n) \ge \frac{n}{\log^2 n}$ \\ \hline
+
+\textbf{4. Iterado} & Prefixo recursivo \newline Custo: $\log|w| + 2\log\log|w|$ & Densidade otimizada \newline $\pi(n) \ge \frac{n}{\log n (\log \log n)^2}$ \\ 
+\bottomrule
+\end{tabular}
+}
+
+\vspace{2mm}
+\footnotesize
+\caption{Impacto da compacidade de códigos no limite de $\pi(n)$.}
+\end{table}
 \end{frame}
     
 \begin{frame}{Entregáveis}
-    Dentro do escopo de atividades propostas em \cite{schoning1998kolmogorov}, estão previstos os seguintes entregáveis:
-    
-    \begin{tcolorbox}[colback=pucblue!5!white, colframe=blue!75!black, title=Entregáveis do Projeto]
-    \begin{itemize}
-        \item Definições, lemas e teoremas das soluções dos exercícios implementados em Lean 4;
-        \item Teoremas formalmente verificados;
-        \item Código organizado, documentado e reproduzível a partir da clonagem ou download de um respectivo repositório no GitHub;
-        \item Relatório em PDF com o detalhamento passo a passo das soluções dos problemas supracitados.
-    \end{itemize}
+    Dentro do escopo das atividades propostas em \cite{schoning1998kolmogorov}, estão previstos os seguintes entregáveis:
+    \medskip
+
+    \begin{tcolorbox}[pucbox, title=Entregáveis do Projeto]
+        \begin{itemize}
+            \item Definições, lemas e teoremas das soluções dos exercícios, implementados e formalmente verificados em Lean 4 (livres de \texttt{sorry});
+            \item Código organizado, documentado e reproduzível a partir de um repositório público no GitHub;
+            \item Relatório em PDF com o detalhamento passo a passo das soluções dos exercícios.
+        \end{itemize}
     \end{tcolorbox}
 \end{frame}
 
 \section{Cronograma}
 
-\begin{frame}{Cronograma}
-    \begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{figures/schedule.png}
-    \caption{\footnotesize{Cronograma de execução do projeto.}}
-    \label{fig:schedule}
-    \end{figure}
+\begin{frame}{Cronograma de Execução}
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[]
+\centering
+\begin{tabular}{@{}p{2.5cm}|p{8.3cm}@{}}
+\toprule
+\textbf{Período} & \textbf{Meta de Formalização em Lean 4} \\ \midrule
+
+\textbf{02/11 -- 08/11} & \textbf{Integração de Base:} Configuração do ambiente, importação da \texttt{Complexitylib} e adaptação das definições de sequências. \\ \hline
+
+\textbf{09/11 -- 15/11} & \textbf{Códigos Autodelimitados:} Formalização das funções de codificação livres de prefixo ($\overline{w}$ e $\text{code}(w)$) e provas de decodificação única. \\ \hline
+
+\textbf{16/11 -- 22/11} & \textbf{Ponte de Incompressibilidade:} Conexão dos lemas de contagem com a aritmética e formalização da reconstrução bivariada (Ex. 9.2 e 9.3). \\ \hline
+
+\textbf{23/11 -- 29/11} & \textbf{Limites na Distribuição de Primos:} Demonstração da infinitude e do Teorema Fraco dos Primos ($\pi(n) \ge \frac{n}{\log^2 n}$) via incompressibilidade. \\ \hline
+
+\textbf{30/11 -- 04/12} & \textbf{Consolidação e Entrega:} Eliminação de eventuais \texttt{sorry}, elaboração do relatório técnico e submissão do repositório final. \\ 
+\bottomrule
+\end{tabular}
+\end{table}
 \end{frame}
 
 % =========================================================================
 \section{Referências}
 % =========================================================================
-\begin{frame}{Referências}
-    \bibliography{refs}    
+\begin{frame}[allowframebreaks]{Referências}
+    \bibliography{refs}
 \end{frame}
+\end{document}
 
 \end{document}
