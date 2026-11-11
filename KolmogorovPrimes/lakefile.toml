@@ -1,0 +1,15 @@
+name = "KolmogorovPrimes"
+version = "0.1.0"
+defaultTargets = ["kolmogorovprimes"]
+
+[[lean_lib]]
+name = "KolmogorovPrimes"
+
+[[lean_exe]]
+name = "kolmogorovprimes"
+root = "Main"
+
+[[require]]
+name = "complexitylib"
+git = "https://github.com/cslib-community/complexitylib"
+rev = "main"
