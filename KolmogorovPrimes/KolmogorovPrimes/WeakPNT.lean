@@ -220,7 +220,7 @@ theorem value_bound_of_log2_compact_bound {p m K : ℕ}
   exact lt_of_lt_of_le hp_lt (le_trans h_exp_le h_prod2)
 
 /--
-Value Form of the Weak Prime Number Theorem Bound (Exercise 9.4 Complete):
+Value Form of the Weak Prime Number Theorem Bound:
 Combines `log2_nthPrime_le_compact_code` with `value_bound_of_log2_compact_bound` to establish
  directly that the `m`-th prime satisfies:
 `nthPrime m < 2 ^ (c + 5) * (m + 1) * (⌊log₂ m⌋ + 2) ^ 2`.
