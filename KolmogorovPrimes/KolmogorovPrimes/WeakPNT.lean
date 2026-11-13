@@ -166,4 +166,76 @@ theorem log2_nthPrime_le_iterated_code
   -- 6) Combine all linear inequalities:
   omega
 
+/-! ## 5. Exponential Bridge: From Logarithmic Bit Bounds to Value Bounds on $p_m$ -/
+
+/--
+Fundamental Power-Logarithm Upper Bound:
+For every natural number `x`, `2 ^ (Nat.log2 x) ≤ x + 1`.
+(If `x = 0`, `2^0 = 1 ≤ 1`; if `x ≠ 0`, `2^(log₂ x) ≤ x ≤ x + 1` by `Nat.log2_self_le`).
+This allows us to bound `2 ^ (Nat.log2 x)` cleanly without assuming `x ≠ 0` at every nested level.
+-/
+theorem two_pow_log2_le_succ (x : ℕ) : 2 ^ Nat.log2 x ≤ x + 1 := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · exact le_trans (Nat.log2_self_le hx) (Nat.le_succ x)
+
+/--
+Exponentiation Lemma for Log-Log Bounds:
+If `⌊log₂ p⌋ ≤ ⌊log₂ m⌋ + 2 * ⌊log₂(⌊log₂ m⌋ + 1)⌋ + K`, then raising 2 to both sides yields
+the polynomial/quasilinear value bound:
+`p < 2 ^ (K + 1) * (m + 1) * (⌊log₂ m⌋ + 2) ^ 2`.
+-/
+theorem value_bound_of_log2_compact_bound {p m K : ℕ}
+    (h_log : Nat.log2 p ≤ Nat.log2 m + 2 * Nat.log2 (Nat.log2 m + 1) + K) :
+    p < 2 ^ (K + 1) * (m + 1) * (Nat.log2 m + 2) ^ 2 := by
+  -- 1) Every integer satisfies `p < 2 ^ (log₂ p + 1)`.
+  have hp_lt : p < 2 ^ (Nat.log2 p + 1) := Nat.lt_log2_self
+  -- 2) By monotonicity of `2 ^ ·`, `2 ^ (log₂ p + 1) ≤ 2 ^ (log₂ m + 2 * log₂(log₂ m + 1) + K + 1)`.
+  have h_exp_le :
+      2 ^ (Nat.log2 p + 1) ≤ 2 ^ (Nat.log2 m + 2 * Nat.log2 (Nat.log2 m + 1) + K + 1) :=
+    Nat.pow_le_pow_right (by decide) (Nat.add_le_add_right h_log 1)
+  -- 3) Factor the exponent sum into a product of powers of 2:
+  -- `2 ^ (A + 2*B + K + 1) = 2^(K + 1) * 2^A * (2^B)^2`.
+  have h_split :
+      2 ^ (Nat.log2 m + 2 * Nat.log2 (Nat.log2 m + 1) + K + 1) =
+        2 ^ (K + 1) * 2 ^ Nat.log2 m * (2 ^ Nat.log2 (Nat.log2 m + 1)) ^ 2 := by
+    rw [← Nat.pow_mul, mul_comm (Nat.log2 (Nat.log2 m + 1)) 2]
+    simp only [Nat.pow_add]
+    ring
+  -- 4) Bound `2 ^ (log₂ m) ≤ m + 1` and `2 ^ (log₂(log₂ m + 1)) ≤ log₂ m + 2` via `two_pow_log2_le_succ`:
+  have hm_pow : 2 ^ Nat.log2 m ≤ m + 1 := two_pow_log2_le_succ m
+  have hlog_pow : 2 ^ Nat.log2 (Nat.log2 m + 1) ≤ Nat.log2 m + 2 :=
+    two_pow_log2_le_succ (Nat.log2 m + 1)
+  have hlog_sq : (2 ^ Nat.log2 (Nat.log2 m + 1)) ^ 2 ≤ (Nat.log2 m + 2) ^ 2 :=
+    Nat.pow_le_pow_left hlog_pow 2
+  -- 5) Multiply the bounds together using monotonicity of multiplication:
+  have h_prod1 : 2 ^ (K + 1) * 2 ^ Nat.log2 m ≤ 2 ^ (K + 1) * (m + 1) :=
+    Nat.mul_le_mul_left (2 ^ (K + 1)) hm_pow
+  have h_prod2 :
+      2 ^ (K + 1) * 2 ^ Nat.log2 m * (2 ^ Nat.log2 (Nat.log2 m + 1)) ^ 2 ≤
+        2 ^ (K + 1) * (m + 1) * (Nat.log2 m + 2) ^ 2 :=
+    Nat.mul_le_mul h_prod1 hlog_sq
+  -- 6) Chain `p < 2^(log₂ p + 1) ≤ ... ≤ 2^(K+1) * (m + 1) * (log₂ m + 2)²`:
+  rw [h_split] at h_exp_le
+  exact lt_of_lt_of_le hp_lt (le_trans h_exp_le h_prod2)
+
+/--
+Value Form of the Weak Prime Number Theorem Bound (Exercise 9.4 Complete):
+Combines `log2_nthPrime_le_compact_code` with `value_bound_of_log2_compact_bound` to establish
+ directly that the `m`-th prime satisfies:
+`nthPrime m < 2 ^ (c + 5) * (m + 1) * (⌊log₂ m⌋ + 2) ^ 2`.
+-/
+theorem nthPrime_lt_compact_code_bound
+    (M : DescriptionMethod BinWord) (n m c : ℕ)
+    (hn : n ≠ 0) (h_pm_ne : nthPrime m ≠ 0) (h_div_ne : n / nthPrime m ≠ 0)
+    (h_dvd : nthPrime m ∣ n)
+    (h_incomp : ((bin n).length : ℕ∞) ≤ M.ecomplexity (bin n))
+    (h_desc : M.ecomplexity (bin n) ≤ (((encodePairCode m (n / nthPrime m)).length + c : ℕ) : ℕ∞)) :
+    nthPrime m < 2 ^ (c + 5) * (m + 1) * (Nat.log2 m + 2) ^ 2 := by
+  have h_log :=
+    log2_nthPrime_le_compact_code M n m c hn h_pm_ne h_div_ne h_dvd h_incomp h_desc
+  have h_log' : Nat.log2 (nthPrime m) ≤ Nat.log2 m + 2 * Nat.log2 (Nat.log2 m + 1) + (c + 4) := by
+    omega
+  exact value_bound_of_log2_compact_bound h_log'
+
 end KolmogorovPrimes
